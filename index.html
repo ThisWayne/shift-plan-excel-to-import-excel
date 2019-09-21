@@ -1,6 +1,8 @@
 <html>
 
-<head></head>
+<head>
+  <script lang="javascript" src="lib/xlsx.full.min.js"></script>
+</head>
 
 <body>
   <div>
@@ -9,15 +11,23 @@
     <input id="toRow" type="number" placeholder="到第幾行？">
     <button type="button" onclick="transformShiftPlanExcelToImportExcel()">轉換成匯入excel</button>
   </div>
+  <script>
+    function transformShiftPlanExcelToImportExcel() {
+      // ToDo:
+      // 1. get user's excel from the input
+      // 2. use some third party js library to extract data from the users's excel
+      // 3. according to the import excel template, fill in the template and return it to the user
+      var file = document.querySelector('#inputExcel').files[0];
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, { type: 'array' });
+
+        /* DO SOMETHING WITH workbook HERE */
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  </script>
 </body>
-<script>
-  function transformShiftPlanExcelToImportExcel() {
-    alert("test");
-    // ToDo:
-    // 1. get user's excel from the input
-    // 2. use some third party js library to extract data from the users's excel
-    // 3. according to the import excel template, fill in the template and return it to the user
-  }
-</script>
 
 </html>
