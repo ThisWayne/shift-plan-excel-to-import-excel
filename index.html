@@ -30,8 +30,33 @@
     function processWorkBook(workbook) {
       const firstSheetName = workbook.SheetNames[0];
       const sheetData = workbook.Sheets[firstSheetName];
-      const year = getYear(sheetData.B1.v);
-      const month = getMonth(sheetData.B1.v);
+      const inputTableTitle = sheetData.B1.v;
+      const exportWorkbook = getInitializedExportWorkbook();
+      const exportWorkbookFileName = "班表匯入_" + inputTableTitle;
+      XLSX.writeFile(exportWorkbook, `${exportWorkbookFileName}.xlsx`);
+      const year = getYear(inputTableTitle);
+      const month = getMonth(inputTableTitle);
+    }
+
+    function getInitializedExportWorkbook() {
+      const exportWorkbook = XLSX.utils.book_new();
+      exportWorkbook.Props = {
+        Author: "This Wayne",
+        CreatedDate: new Date()
+      }
+
+      const sheetName = 'Import file';
+      exportWorkbook.SheetNames.push(sheetName);
+
+      const templateHeaders = [[
+        '*工號', '姓名', '*日期(YYYY/MM/DD)', '*狀態代碼',
+        '班次代碼', '上班時間(HH:mm)', '下班時間(HH:mm)', '全天支援單位代碼',
+        '(1)支援單位代碼', '(1)支援起時-hh:mm', '(1)支援迄時-hh:mm',
+        '(2)支援單位代碼', '(2)支援起時-hh:mm', '(2)支援迄時-hh:mm',
+        '(3)支援單位代碼', '(3)支援起時-hh:mm', '(3)支援迄時-hh:mm']];
+      const sheetHeaders = XLSX.utils.aoa_to_sheet(templateHeaders);
+      exportWorkbook.Sheets[sheetName] = sheetHeaders;
+      return exportWorkbook;
     }
 
     function getYear(rawTitle) {
