@@ -14,7 +14,6 @@
   <script>
     function transformShiftPlanExcelToImportExcel() {
       // ToDo:
-      // 1. get user's excel from the input
       // 2. use some third party js library to extract data from the users's excel
       // 3. according to the import excel template, fill in the template and return it to the user
       var file = document.querySelector('#inputExcel').files[0];
@@ -22,10 +21,24 @@
       reader.onload = function (e) {
         var data = new Uint8Array(e.target.result);
         var workbook = XLSX.read(data, { type: 'array', cellStyles: true });
-
+        processWorkBook(workbook);
         /* DO SOMETHING WITH workbook HERE */
       };
       reader.readAsArrayBuffer(file);
+    }
+
+    function processWorkBook(workbook) {
+      const firstSheetName = workbook.SheetNames[0];
+      const sheetData = workbook.Sheets[firstSheetName];
+      const year = getYear(sheetData.B1.v);
+      const month = getMonth(sheetData.B1.v);
+    }
+
+    function getYear(rawTitle) {
+      return rawTitle.slice(0, rawTitle.indexOf('.'));
+    }
+    function getMonth(rawTitle) {
+      return rawTitle.slice(rawTitle.indexOf('.') + 1, rawTitle.indexOf('月')).padStart(2, '0');
     }
   </script>
 </body>
