@@ -21,19 +21,39 @@
       reader.onload = function (e) {
         var data = new Uint8Array(e.target.result);
         var workbook = XLSX.read(data, { type: 'array', cellStyles: true });
-        processWorkBook(workbook);
-        /* DO SOMETHING WITH workbook HERE */
+        processWorkBookAndPopUpDownloadExcel(workbook);
       };
       reader.readAsArrayBuffer(file);
     }
 
-    function processWorkBook(workbook) {
+    function processWorkBookAndPopUpDownloadExcel(workbook) {
       const firstSheetName = workbook.SheetNames[0];
       const sheetData = workbook.Sheets[firstSheetName];
+
       const inputTableTitle = sheetData.B1.v;
-      const exportWorkbook = getInitializedExportWorkbook();
       const exportWorkbookFileName = "班表匯入_" + inputTableTitle;
-      XLSX.writeFile(exportWorkbook, `${exportWorkbookFileName}.xlsx`);
+
+      extractInputWorkbookAndGetExportWorkbook(workbook);
+
+      // /XLSX.writeFile(exportWorkbook, `${exportWorkbookFileName}.xlsx`);
+    }
+
+    function extractInputWorkbookAndGetExportWorkbook(inputWorkbook) {
+      const exportWorkbook = getInitializedExportWorkbook();
+
+      const firstSheetName = workbook.SheetNames[0];
+      const sheetData = workbook.Sheets[firstSheetName];
+
+      // ToDo:
+      // 1. A欄表示員工編號，只有裡面有值的那幾行需要爬資料
+      // 可以用Object.keys()得到sheetData物件有哪些key
+      // 再用陣列的filter功能以及字串的regex去排除不要的資料
+      // (像是AA2就不是我們要的欄位，我們只要A+數字的欄位，還有欄位裡面沒有值的也不要)
+      // 
+      // 2. 寫爬資料的邏輯，然後放資料進去exportWorkbook
+
+
+      const inputTableTitle = sheetData.B1.v;
       const year = getYear(inputTableTitle);
       const month = getMonth(inputTableTitle);
     }
