@@ -69,7 +69,7 @@
             const exportRow = [];
             let colName;
             if (colNameStart.charCodeAt(0) + col > 'Z'.charCodeAt(0)) {
-              colName = 'A' + String.fromCharCode(colNameStart.charCodeAt(0) + col - 21);
+              colName = 'A' + String.fromCharCode('A'.charCodeAt(0) + (col % 21));
             } else {
               colName = String.fromCharCode(colNameStart.charCodeAt(0) + col);
             }
@@ -81,12 +81,14 @@
               const dateWithPad = getDateWithPad(`${date.v}`);
               exportRow.push(`${year}/${month}/${dateWithPad}`);
 
-              const { status, shift, startTime, endTime } = getShiftDetail(inputSheetData[`${colName}${row}`].v);
-              exportRow.push(status);
-              exportRow.push(shift);
-              exportRow.push(startTime);
-              exportRow.push(endTime);
-              sheetAoa.push(exportRow);
+              const { status, shift, startTime, endTime } = getShiftDetail(inputSheetData[`${colName}${row}`]);
+              if (status !== 'H0001') {
+                exportRow.push(status);
+                exportRow.push(shift);
+                exportRow.push(startTime);
+                exportRow.push(endTime);
+                sheetAoa.push(exportRow);
+              }
             }
           }
         }
@@ -107,7 +109,8 @@
         '(3)支援單位代碼', '(3)支援起時-hh:mm', '(3)支援迄時-hh:mm'];
     }
 
-    function getShiftDetail(shiftType) {
+    function getShiftDetail(shiftTypeCell) {
+      const shiftType = shiftTypeCell.s.bgColor.rgb === 'FFFF00' ? '2yellow' : `${shiftTypeCell.v}`;
       let status;
       let shift;
       let startTime;
