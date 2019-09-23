@@ -7,8 +7,8 @@
 <body>
   <div>
     <input id="inputExcel" type="file" accept=".xls,.xlsx">
-    <input id="fromRow" type="number" placeholder="從第幾行？">
-    <input id="toRow" type="number" placeholder="到第幾行？">
+    <!-- <input id="fromRow" type="number" placeholder="從第幾行？">
+    <input id="toRow" type="number" placeholder="到第幾行？"> -->
     <button type="button" onclick="transformShiftPlanExcelToImportExcel()">轉換成匯入excel</button>
   </div>
   <script>
@@ -30,35 +30,16 @@
       const firstSheetName = workbook.SheetNames[0];
       const sheetData = workbook.Sheets[firstSheetName];
 
+
+      const exportWorkbook = extractInputWorkbookAndGetExportWorkbook(workbook);
+
       const inputTableTitle = sheetData.B1.v;
       const exportWorkbookFileName = "班表匯入_" + inputTableTitle;
 
-      extractInputWorkbookAndGetExportWorkbook(workbook);
-
-      // /XLSX.writeFile(exportWorkbook, `${exportWorkbookFileName}.xlsx`);
+      XLSX.writeFile(exportWorkbook, `${exportWorkbookFileName}.xlsx`);
     }
 
     function extractInputWorkbookAndGetExportWorkbook(inputWorkbook) {
-      const exportWorkbook = getInitializedExportWorkbook();
-
-      const firstSheetName = workbook.SheetNames[0];
-      const sheetData = workbook.Sheets[firstSheetName];
-
-      // ToDo:
-      // 1. A欄表示員工編號，只有裡面有值的那幾行需要爬資料
-      // 可以用Object.keys()得到sheetData物件有哪些key
-      // 再用陣列的filter功能以及字串的regex去排除不要的資料
-      // (像是AA2就不是我們要的欄位，我們只要A+數字的欄位，還有欄位裡面沒有值的也不要)
-      // 
-      // 2. 寫爬資料的邏輯，然後放資料進去exportWorkbook
-
-
-      const inputTableTitle = sheetData.B1.v;
-      const year = getYear(inputTableTitle);
-      const month = getMonth(inputTableTitle);
-    }
-
-    function getInitializedExportWorkbook() {
       const exportWorkbook = XLSX.utils.book_new();
       exportWorkbook.Props = {
         Author: "This Wayne",
@@ -68,22 +49,109 @@
       const sheetName = 'Import file';
       exportWorkbook.SheetNames.push(sheetName);
 
-      const templateHeaders = [[
+      const sheetAoa = [];
+      const headers = getExportTemplateHeaderArray();
+      sheetAoa.push(headers);
+
+
+      const inputFirstSheetName = inputWorkbook.SheetNames[0];
+      const inputSheetData = inputWorkbook.Sheets[inputFirstSheetName];
+
+      const inputTableTitle = inputSheetData.B1.v;
+      const year = getYear(inputTableTitle);
+      const month = getMonth(inputTableTitle);
+
+      for (let row = 1; row <= 30; row += 1) {
+        if (inputSheetData[`A${row}`]) {
+          let colNameStart = 'F';
+          let colName = 'F';
+          for (let col = 0; col <= 31; col += 1) {
+            const exportRow = [];
+            let colName;
+            if (colNameStart.charCodeAt(0) + col > 'Z'.charCodeAt(0)) {
+              colName = 'A' + String.fromCharCode(colNameStart.charCodeAt(0) + col - 21);
+            } else {
+              colName = String.fromCharCode(colNameStart.charCodeAt(0) + col);
+            }
+            const date = inputSheetData[`${colName}2`];
+            if (date) {
+              exportRow.push(inputSheetData[`A${row}`].v);
+              exportRow.push(''); // for empty name
+
+              const dateWithPad = getDateWithPad(`${date.v}`);
+              exportRow.push(`${year}/${month}/${dateWithPad}`);
+
+              const { status, shift, startTime, endTime } = getShiftDetail(inputSheetData[`${colName}${row}`].v);
+              exportRow.push(status);
+              exportRow.push(shift);
+              exportRow.push(startTime);
+              exportRow.push(endTime);
+              sheetAoa.push(exportRow);
+            }
+          }
+        }
+      }
+
+      const outputSheetData = XLSX.utils.aoa_to_sheet(sheetAoa);
+      exportWorkbook.Sheets[sheetName] = outputSheetData;
+
+      return exportWorkbook;
+    }
+
+    function getExportTemplateHeaderArray() {
+      return [
         '*工號', '姓名', '*日期(YYYY/MM/DD)', '*狀態代碼',
         '班次代碼', '上班時間(HH:mm)', '下班時間(HH:mm)', '全天支援單位代碼',
         '(1)支援單位代碼', '(1)支援起時-hh:mm', '(1)支援迄時-hh:mm',
         '(2)支援單位代碼', '(2)支援起時-hh:mm', '(2)支援迄時-hh:mm',
-        '(3)支援單位代碼', '(3)支援起時-hh:mm', '(3)支援迄時-hh:mm']];
-      const sheetHeaders = XLSX.utils.aoa_to_sheet(templateHeaders);
-      exportWorkbook.Sheets[sheetName] = sheetHeaders;
-      return exportWorkbook;
+        '(3)支援單位代碼', '(3)支援起時-hh:mm', '(3)支援迄時-hh:mm'];
+    }
+
+    function getShiftDetail(shiftType) {
+      let status;
+      let shift;
+      let startTime;
+      let endTime;
+      if (shiftType === '1' || shiftType === '1(5)') {
+        status = 'W0001';
+        shift = 'A006';
+        startTime = '10:30';
+        endTime = '18:30';
+      } else if (shiftType === '2') {
+        status = 'W0001';
+        shift = 'A010';
+        startTime = '13:30';
+        endTime = '21:30';
+      } else if (shiftType === '全') {
+        status = 'W0001';
+        shift = 'A006';
+        startTime = '10:30';
+        endTime = '20:30';
+      } else if (shiftType === '@' || shiftType === 'X') {
+        status = 'H0001';
+        shift = '';
+        startTime = '';
+        endTime = '';
+      } else {
+        // 2 yellow
+        status = 'W0001';
+        shift = 'A021';
+        startTime = '12:30';
+        endTime = '20:30';
+      }
+      return { status, shift, startTime, endTime };
     }
 
     function getYear(rawTitle) {
       return rawTitle.slice(0, rawTitle.indexOf('.'));
     }
+
     function getMonth(rawTitle) {
       return rawTitle.slice(rawTitle.indexOf('.') + 1, rawTitle.indexOf('月')).padStart(2, '0');
+    }
+
+    function getDateWithPad(date) {
+      return date.padStart(2, '0');
     }
   </script>
 </body>
