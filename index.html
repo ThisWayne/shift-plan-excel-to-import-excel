@@ -6,24 +6,44 @@
 
 <body>
   <div>
-    <input id="inputExcel" type="file" accept=".xls,.xlsx">
-    <!-- <input id="fromRow" type="number" placeholder="從第幾行？">
-    <input id="toRow" type="number" placeholder="到第幾行？"> -->
-    <button type="button" onclick="transformShiftPlanExcelToImportExcel()">轉換成匯入excel</button>
+    <section>
+      <h2>範本下載</h2>
+      <p><a href="./ref/班表編排範本.xlsx" download>班表編排範本下載</a></p>
+    </section>
+    <section>
+      <h2>轉換</h2>
+      <input id="inputExcel" type="file" accept=".xls,.xlsx">
+      <button id="transformBtn" type="button" class="buttonload" onclick="transformShiftPlanExcelToImportExcel()">
+        轉換成班表匯入excel
+      </button>
+      <div><label id="error" style="color: red"></label></div>
+    </section>
   </div>
   <script>
     function transformShiftPlanExcelToImportExcel() {
-      // ToDo:
-      // 2. use some third party js library to extract data from the users's excel
-      // 3. according to the import excel template, fill in the template and return it to the user
       var file = document.querySelector('#inputExcel').files[0];
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        var data = new Uint8Array(e.target.result);
-        var workbook = XLSX.read(data, { type: 'array', cellStyles: true });
-        processWorkBookAndPopUpDownloadExcel(workbook);
-      };
-      reader.readAsArrayBuffer(file);
+      if (file) {
+        document.getElementById("transformBtn").disabled = true;
+        document.getElementById("transformBtn").innerHTML = "轉換中...";
+        document.getElementById("error").innerHTML = "";
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          var data = new Uint8Array(e.target.result);
+          var workbook = XLSX.read(data, { type: 'array', cellStyles: true });
+          try {
+            processWorkBookAndPopUpDownloadExcel(workbook);
+          } catch {
+            document.getElementById("error").innerHTML = "有什麼出錯了...XD";
+          }
+
+          document.getElementById("transformBtn").innerHTML = "轉換成班表匯入excel";
+          document.getElementById("transformBtn").disabled = false;
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        document.getElementById("error").innerHTML = "請選擇檔案";
+      }
     }
 
     function processWorkBookAndPopUpDownloadExcel(workbook) {
