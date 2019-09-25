@@ -33,8 +33,9 @@
           var workbook = XLSX.read(data, { type: 'array', cellStyles: true });
           try {
             processWorkBookAndPopUpDownloadExcel(workbook);
-          } catch {
+          } catch (e) {
             document.getElementById("error").innerHTML = "有什麼出錯了...XD";
+            console.log(e);
           }
 
           document.getElementById("transformBtn").innerHTML = "轉換成班表匯入excel";
