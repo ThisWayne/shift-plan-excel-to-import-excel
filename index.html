@@ -75,8 +75,11 @@
       sheetAoa.push(headers);
 
 
-      const inputFirstSheetName = inputWorkbook.SheetNames[0];
-      const inputSheetData = inputWorkbook.Sheets[inputFirstSheetName];
+      const inputShiftPlanSheetName = inputWorkbook.SheetNames[0];
+      const inputSheetData = inputWorkbook.Sheets[inputShiftPlanSheetName];
+
+      const inputShiftMappingSheetName = inputWorkbook.SheetNames[1];
+      const shiftMappng = getShiftMapping(inputWorkbook.Sheets[inputShiftMappingSheetName]);
 
       const inputTableTitle = inputSheetData.B1.v;
       const year = getYear(inputTableTitle);
@@ -95,15 +98,15 @@
               colName = String.fromCharCode(colNameStart.charCodeAt(0) + col);
             }
             const date = inputSheetData[`${colName}2`];
-            if (date) {
+            if (date && inputSheetData[`${colName}${row}`]) {
               exportRow.push(inputSheetData[`A${row}`].v);
               exportRow.push(''); // for empty name
 
               const dateWithPad = getDateWithPad(`${date.v}`);
               exportRow.push(`${year}/${month}/${dateWithPad}`);
 
-              const { status, shift, startTime, endTime } = getShiftDetail(inputSheetData[`${colName}${row}`]);
-              if (status !== 'H0001') {
+              const { status, shift, startTime, endTime } = getShiftDetail(inputSheetData[`${colName}${row}`], shiftMappng);
+              if (status && status !== 'H0001') {
                 exportRow.push(status);
                 exportRow.push(shift);
                 exportRow.push(startTime);
@@ -130,40 +133,31 @@
         '(3)支援單位代碼', '(3)支援起時-hh:mm', '(3)支援迄時-hh:mm'];
     }
 
-    function getShiftDetail(shiftTypeCell) {
-      const shiftType = shiftTypeCell.s.bgColor.rgb === 'FFFF00' ? '2yellow' : `${shiftTypeCell.v}`;
-      let status;
-      let shift;
-      let startTime;
-      let endTime;
-      if (shiftType === '1' || shiftType === '1(5)') {
-        status = 'W0001';
-        shift = 'A006';
-        startTime = '10:30';
-        endTime = '18:30';
-      } else if (shiftType === '2') {
-        status = 'W0001';
-        shift = 'A010';
-        startTime = '13:30';
-        endTime = '21:30';
-      } else if (shiftType === '全') {
-        status = 'W0001';
-        shift = 'A006';
-        startTime = '10:30';
-        endTime = '18:30';
-      } else if (shiftType === '@' || shiftType === 'X') {
-        status = 'H0001';
-        shift = '';
-        startTime = '';
-        endTime = '';
-      } else {
-        // 2 yellow
-        status = 'W0001';
-        shift = 'A021';
-        startTime = '12:30';
-        endTime = '20:30';
+    function getShiftMapping(mappingSheetData) {
+      const mapping = {};
+      for (let row = 2; row <= 30; row += 1) {
+        const keyCell = mappingSheetData[`A${row}`];
+        const status = mappingSheetData[`B${row}`];
+        const shift = mappingSheetData[`C${row}`];
+        const startTime = mappingSheetData[`D${row}`];
+        const endTime = mappingSheetData[`E${row}`];
+        if (keyCell && status && shift && startTime && endTime) {
+          let key = keyCell.w;
+          if (keyCell.s.fgColor) key += keyCell.s.fgColor;
+          mapping[key] = { status: status.w, shift: shift.w, startTime: startTime.w, endTime: endTime.w };
+        }
       }
-      return { status, shift, startTime, endTime };
+      return mapping;
+    }
+
+    function getShiftDetail(shiftTypeCell, shiftMappng) {
+      const shiftType = shiftTypeCell.w;
+      let shiftTypeWithColor = shiftType;
+      if (shiftTypeCell.s.fgColor && shiftTypeCell.s.fgColor.rgb) shiftTypeWithColor = `${shiftType}_${shiftTypeCell.s.fgColor.rgb}`;
+
+      if (shiftMappng[shiftTypeWithColor]) return shiftMappng[shiftTypeWithColor];
+      if (shiftMappng[shiftType]) return shiftMappng[shiftType];
+      return {};
     }
 
     function getYear(rawTitle) {
