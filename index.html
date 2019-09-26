@@ -19,6 +19,39 @@
       </button>
       <div><label id="error" style="color: red"></label></div>
     </section>
+    <section>
+      <h2>使用說明</h2>
+      <p>
+        <ol>
+          <li>下載「班表編排範本」，編輯班表。</li>
+          <li>在「轉換」的地方選擇剛才編輯的班表檔案並按下「轉換成班表匯入excel」，即會出現下載視窗。</li>
+          <li>下載並打開「班表匯入_xxxx.x月班表.xlsx」，確認有資料。</li>
+          <li>利用Apollo ERP排班系統的匯入功能上傳班表（注意！若單次匯入的資料筆數太多，排班系統介面會報錯，可能是介面上的資料分頁太多會壞掉XD，建議分成幾次匯入）。</li>
+        </ol>
+      </p>
+    </section>
+    <section>
+      <h2>使用限制</h2>
+      <article>
+        <h3>1. 班表編排範本</h3>
+        <h4>1.1 班表</h4>
+        <img src="./images/shift-plan-template.jpg" style="width: 800px;">
+        <ol>
+          <li>標題格式一定要是年份.月份開頭。</li>
+          <li>工號欄位若留空，轉換時會跳過該行。</li>
+          <li>工作表名稱可更改，但是順序一定要是在最左邊是班表，接著是對應表。</li>
+          <li>純粹供編輯對應表時參照使用，程式中目前沒有使用到。</li>
+          <li>左邊的「班次2」恰巧因為周六日會有藍色的背景顏色，程式會先看對應表是否有「班次2且藍色底」的設定，沒有的話就用班次2的設定。</li>
+          <li>日期會抓從「F2」欄位往右抓，請自行確保月份日期的正確。</li>
+        </ol>
+        <h4>1.2 對應表</h4>
+        <img src="./images/mapping-table.jpg" style="width: 800px;">
+        <ol>
+          <li>在「班次名稱」欄位填入的值代表班表裡面的班次，同樣的值可設定背景顏色做區分。</li>
+          <li>全欄位皆需要有值，休假因有休息日與例假日之分，目前暫時不支援。</li>
+        </ol>
+      </article>
+    </section>
   </div>
   <script>
     function transformShiftPlanExcelToImportExcel() {
