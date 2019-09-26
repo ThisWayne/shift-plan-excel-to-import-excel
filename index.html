@@ -49,13 +49,12 @@
     }
 
     function processWorkBookAndPopUpDownloadExcel(workbook) {
-      const firstSheetName = workbook.SheetNames[0];
-      const sheetData = workbook.Sheets[firstSheetName];
-
+      const inputShiftPlanSheetName = workbook.SheetNames[0];
+      const sheetData = workbook.Sheets[inputShiftPlanSheetName];
 
       const exportWorkbook = extractInputWorkbookAndGetExportWorkbook(workbook);
 
-      const inputTableTitle = sheetData.B1.v;
+      const inputTableTitle = sheetData.B1.w;
       const exportWorkbookFileName = "班表匯入_" + inputTableTitle;
 
       XLSX.writeFile(exportWorkbook, `${exportWorkbookFileName}.xlsx`);
@@ -75,39 +74,43 @@
       const headers = getExportTemplateHeaderArray();
       sheetAoa.push(headers);
 
-
       const inputShiftPlanSheetName = inputWorkbook.SheetNames[0];
       const inputSheetData = inputWorkbook.Sheets[inputShiftPlanSheetName];
 
       const inputShiftMappingSheetName = inputWorkbook.SheetNames[1];
       const shiftMappng = getShiftMapping(inputWorkbook.Sheets[inputShiftMappingSheetName]);
 
-      const inputTableTitle = inputSheetData.B1.v;
+      const inputTableTitle = inputSheetData.B1.w;
       const year = getYear(inputTableTitle);
       const month = getMonth(inputTableTitle);
 
-      for (let row = 1; row <= 30; row += 1) {
+      for (let row = 2; row <= 50; row += 1) {
         if (inputSheetData[`A${row}`]) {
-          let colNameStart = 'F';
-          let colName = 'F';
+          const colNameStart = 'F';
+
           for (let col = 0; col <= 31; col += 1) {
             const exportRow = [];
+
             let colName;
             if (colNameStart.charCodeAt(0) + col > 'Z'.charCodeAt(0)) {
               colName = 'A' + String.fromCharCode('A'.charCodeAt(0) + (col % 21));
             } else {
               colName = String.fromCharCode(colNameStart.charCodeAt(0) + col);
             }
+
             const date = inputSheetData[`${colName}2`];
             if (date && inputSheetData[`${colName}${row}`]) {
-              exportRow.push(inputSheetData[`A${row}`].v);
+              exportRow.push(inputSheetData[`A${row}`].w);
               exportRow.push(''); // for empty name
 
-              const dateWithPad = getDateWithPad(`${date.v}`);
+              const dateWithPad = getDateWithPad(date.w);
               exportRow.push(`${year}/${month}/${dateWithPad}`);
 
               const { status, shift, startTime, endTime } = getShiftDetail(inputSheetData[`${colName}${row}`], shiftMappng);
-              if (status && status !== 'H0001') {
+
+              // skip day off, the day off status logic is not the same
+              // will probably implement it in the future
+              if (status) {
                 exportRow.push(status);
                 exportRow.push(shift);
                 exportRow.push(startTime);
@@ -144,7 +147,7 @@
         const endTime = mappingSheetData[`E${row}`];
         if (keyCell && status && shift && startTime && endTime) {
           let key = keyCell.w;
-          if (keyCell.s.fgColor) key += keyCell.s.fgColor;
+          if (keyCell.s.fgColor) key = `${key}_${keyCell.s.fgColor.rgb}`;
           mapping[key] = { status: status.w, shift: shift.w, startTime: startTime.w, endTime: endTime.w };
         }
       }
